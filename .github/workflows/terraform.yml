@@ -16,7 +16,16 @@ jobs:
       with:
         terraform_version: 1.7.0
 
-    - name: Terraform Init
+    - name: Terraform Init (CI Validation)
+      if: github.event_name == 'pull_request'
+      run: terraform init -backend=false
+
+    - name: Terraform Validate
+      if: github.event_name == 'pull_request'
+      run: terraform validate
+
+    - name: Terraform Init (Azure Backend)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: terraform init
       env:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -25,6 +34,7 @@ jobs:
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
     - name: Terraform Plan
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: terraform plan -var-file="dev.tfvars" -input=false
       env:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
